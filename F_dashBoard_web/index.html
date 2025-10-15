@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>学生游戏行为分析仪表盘</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        margin: 20px;
+        background: #f5f7fa;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      .chart-box {
+        background: #fff;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      select {
+        margin-bottom: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📊 学生游戏行为画像仪表盘</h1>
+
+    <!-- 班级 & 学生选择 -->
+    <div>
+      <label>选择班级：</label>
+      <select id="classSelect"></select>
+      <label>选择学号：</label>
+      <select id="stuSelect"></select>
+    </div>
+
+    <!-- 图1：行为次数对比 -->
+    <div class="chart-box" id="countBar"></div>
+    <!-- 图2：行为时长对比 -->
+    <div class="chart-box" id="durationBar"></div>
+
+    <script>
+      // ===== 通用：加载 JSON =====
+      async function loadJSON(file) {
+        const res = await fetch("data/" + file);
+        return res.json();
+      }
+
+      // ===== 初始化：填充班级下拉框 =====
+      (async function initClassSelect() {
+        const stuData = await loadJSON("每个学生游戏行为画像.json");
+        // 去重班级列表
+        const classes = [...new Set(stuData.map((d) => d.Class))];
+        const classSel = document.getElementById("classSelect");
+        classes.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c;
+          opt.textContent = c;
+          classSel.appendChild(opt);
+        });
+        classSel.addEventListener("change", fillStudentSelect);
+        classSel.dispatchEvent(new Event("change")); // 触发一次，填充学生
+      })();
+
+      // ===== 填充学生下拉框（从学生画像里读）=====
+      async function fillStudentSelect() {
+        const cls = document.getElementById("classSelect").value;
+        const stuData = await loadJSON("每个学生游戏行为画像.json");
+        // 只保留当前班级的学生
+        const stus = stuData
+          .filter((d) => d.Class === cls)
+          .map((d) => d.StuNum);
+        const stuSel = document.getElementById("stuSelect");
+        stuSel.innerHTML = "";
+        stus.forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = s;
+          stuSel.appendChild(opt);
+        });
+        // 默认触发一次更新图表
+        stuSel.dispatchEvent(new Event("change"));
+      }
+
+      // ===== 主函数：更新所有图表 =====
+      async function updateCharts() {
+        const cls = document.getElementById("classSelect").value;
+        const stu = document.getElementById("stuSelect").value;
+        if (!cls || !stu) return;
+
+        const [stuData, clsData] = await Promise.all([
+          loadJSON("每个学生游戏行为画像.json").then((arr) =>
+            arr.find((d) => d.Class === cls && d.StuNum === stu)
+          ),
+          loadJSON("班级行为画像.json").then((arr) =>
+            arr.find((d) => d.Class === cls)
+          ),
+        ]);
+
+        // 若找不到学生，直接返回
+        if (!stuData) {
+          console.warn("未找到该学生");
+          return;
+        }
+
+        // 1️⃣ 行为次数对比
+        drawCountBar(stuData, clsData);
+        // 2️⃣ 行为时长对比
+        drawDurationBar(stuData, clsData);
+      }
+
+      // ===== 图表1：行为次数对比 =====
+      function drawCountBar(stu, cls) {
+        const categories = ["阅读", "探索", "练习", "反馈", "重玩/结束"];
+        const stuCounts = categories.map(
+          (_, i) =>
+            stu[
+              `round1_${
+                ["read", "explore", "practice", "feedback", "replay_end"][i]
+              }_count`
+            ] || 0
+        );
+        const clsCounts = categories.map(
+          (_, i) =>
+            cls[
+              `class_avg_round1_${
+                ["read", "explore", "practice", "feedback", "replay_end"][i]
+              }_count`
+            ] || 0
+        );
+
+        const chart = echarts.init(document.getElementById("countBar"));
+        chart.setOption({
+          title: { text: "行为次数对比（学生 vs 班级平均）" },
+          tooltip: { trigger: "axis" },
+          legend: { data: ["学生次数", "班级平均"] },
+          xAxis: { type: "category", data: categories },
+          yAxis: { type: "value" },
+          series: [
+            {
+              name: "学生次数",
+              type: "bar",
+              data: stuCounts,
+              itemStyle: { color: "#5470c6" },
+            },
+            {
+              name: "班级平均",
+              type: "bar",
+              data: clsCounts,
+              itemStyle: { color: "#91cc75" },
+            },
+          ],
+        });
+      }
+
+      // ===== 图表2：行为时长对比 =====
+      function drawDurationBar(stu, cls) {
+        const categories = ["阅读", "探索", "练习", "反馈", "重玩/结束"];
+        const stuDurs = categories.map(
+          (_, i) =>
+            stu[
+              `round1_${
+                ["read", "explore", "practice", "feedback", "replay_end"][i]
+              }_duration`
+            ] || 0
+        );
+        const clsDurs = categories.map(
+          (_, i) =>
+            cls[
+              `class_avg_round1_${
+                ["read", "explore", "practice", "feedback", "replay_end"][i]
+              }_duration`
+            ] || 0
+        );
+
+        const chart = echarts.init(document.getElementById("durationBar"));
+        chart.setOption({
+          title: { text: "行为时长对比（学生 vs 班级平均）" },
+          tooltip: { trigger: "axis" },
+          legend: { data: ["学生时长", "班级平均"] },
+          xAxis: { type: "category", data: categories },
+          yAxis: { type: "value" },
+          series: [
+            {
+              name: "学生时长",
+              type: "bar",
+              data: stuDurs,
+              itemStyle: { color: "#5470c6" },
+            },
+            {
+              name: "班级平均",
+              type: "bar",
+              data: clsDurs,
+              itemStyle: { color: "#91cc75" },
+            },
+          ],
+        });
+      }
+
+      // ===== 图表3：游戏成绩折线 =====
+      function drawScoreLine(stu, cls) {
+        const rounds = [1, 2, 3, 4, 5];
+        const stuScores = rounds.map((r) => stu[`game_score_${r}`] || 0);
+        const clsScores = rounds.map(
+          (r) => cls[`class_avg_game_score_${r}`] || 0
+        );
+
+        const chart = echarts.init(document.getElementById("scoreLine"));
+        chart.setOption({
+          title: { text: "游戏成绩对比（学生 vs 班级平均）" },
+          tooltip: { trigger: "axis" },
+          legend: { data: ["学生成绩", "班级平均"] },
+          xAxis: { type: "category", data: rounds },
+          yAxis: { type: "value" },
+          series: [
+            {
+              name: "学生成绩",
+              type: "line",
+              data: stuScores,
+              lineStyle: { color: "#5470c6" },
+              symbol: "circle",
+            },
+            {
+              name: "班级平均",
+              type: "line",
+              data: clsScores,
+              lineStyle: { color: "#91cc75", type: "dashed" },
+              symbol: "none",
+            },
+          ],
+        });
+      }
+    </script>
+  </body>
+</html>
