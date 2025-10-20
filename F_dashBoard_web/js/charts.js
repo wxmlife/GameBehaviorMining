@@ -150,6 +150,8 @@ function drawCountBar(stu, cls) {
   const keys = ["read", "explore", "practice", "feedback", "replay_end"];
   const stuCounts = keys.map((k) => stu[`round1_${k}_count`] || 0);
   const clsCounts = keys.map((k) => cls[`class_avg_round1_${k}_count`] || 0);
+  const studentColors = ["#1E88E5", "#42A5F5", "#64B5F6", "#90CAF9", "#BBDEFB"];
+  const classColors = ["#FFA726", "#FFB74D", "#FFCC80", "#FFE0B2", "#FFF3E0"];
 
   charts.countBar.setOption({
     title: {
@@ -171,31 +173,15 @@ function drawCountBar(stu, cls) {
       axisLabel: { interval: 0, rotate: 0 }, // 确保所有标签显示
     },
     yAxis: { type: "value" },
-    color: [
-      // 学生（蓝色系）和班级（橙色系）的颜色数组
-      "#1E88E5",
-      "#42A5F5",
-      "#64B5F6",
-      "#90CAF9",
-      "#BBDEFB", // 学生蓝
-      "#FFA726",
-      "#FFB74D",
-      "#FFCC80",
-      "#FFE0B2",
-      "#FFF3E0", // 班级橙
-    ],
     series: [
       {
         name: "学生次数",
         type: "bar",
-        data: stuCounts,
-        itemStyle: {
-          // 每个柱子不同蓝色
-          color: (params) =>
-            ["#1E88E5", "#42A5F5", "#64B5F6", "#90CAF9", "#BBDEFB"][
-              params.dataIndex
-            ],
-        },
+        itemStyle: { color: studentColors[0] }, // legend 取首色
+        data: stuCounts.map((v, i) => ({
+          value: v,
+          itemStyle: { color: studentColors[i] },
+        })),
         label: {
           // 柱顶显示数值
           show: true,
@@ -207,14 +193,11 @@ function drawCountBar(stu, cls) {
       {
         name: "班级平均",
         type: "bar",
-        data: clsCounts,
-        itemStyle: {
-          // 每个柱子不同橙色
-          color: (params) =>
-            ["#FFA726", "#FFB74D", "#FFCC80", "#FFE0B2", "#FFF3E0"][
-              params.dataIndex
-            ],
-        },
+        itemStyle: { color: classColors[0] },
+        data: clsCounts.map((v, i) => ({
+          value: v,
+          itemStyle: { color: classColors[i] },
+        })),
         label: {
           // 柱顶显示数值
           show: true,
@@ -234,6 +217,8 @@ function drawDurationBar(stu, cls) {
   const clsDurations = keys.map(
     (k) => cls[`class_avg_round1_${k}_duration`] || 0
   );
+  const studentColors = ["#1E88E5", "#42A5F5", "#64B5F6", "#90CAF9", "#BBDEFB"];
+  const classColors = ["#FFA726", "#FFB74D", "#FFCC80", "#FFE0B2", "#FFF3E0"];
 
   charts.durationBar.setOption({
     title: {
@@ -255,31 +240,15 @@ function drawDurationBar(stu, cls) {
       axisLabel: { interval: 0, rotate: 0 }, // 确保所有标签显示
     },
     yAxis: { type: "value" },
-    color: [
-      // 学生（蓝色系）和班级（橙色系）的颜色数组
-      "#1E88E5",
-      "#42A5F5",
-      "#64B5F6",
-      "#90CAF9",
-      "#BBDEFB", // 学生蓝
-      "#FFA726",
-      "#FFB74D",
-      "#FFCC80",
-      "#FFE0B2",
-      "#FFF3E0", // 班级橙
-    ],
     series: [
       {
         name: "学生时长",
         type: "bar",
-        data: stuDurations,
-        itemStyle: {
-          // 每个柱子不同蓝色
-          color: (params) =>
-            ["#1E88E5", "#42A5F5", "#64B5F6", "#90CAF9", "#BBDEFB"][
-              params.dataIndex
-            ],
-        },
+        itemStyle: { color: studentColors[0] }, // legend 取首色
+        data: stuDurations.map((v, i) => ({
+          value: v,
+          itemStyle: { color: studentColors[i] },
+        })),
         label: {
           // 柱顶显示数值
           show: true,
@@ -291,14 +260,11 @@ function drawDurationBar(stu, cls) {
       {
         name: "班级平均",
         type: "bar",
-        data: clsDurations,
-        itemStyle: {
-          // 每个柱子不同橙色
-          color: (params) =>
-            ["#FFA726", "#FFB74D", "#FFCC80", "#FFE0B2", "#FFF3E0"][
-              params.dataIndex
-            ],
-        },
+        itemStyle: { color: classColors[0] }, // legend 取首色
+        data: clsDurations.map((v, i) => ({
+          value: v,
+          itemStyle: { color: classColors[i] },
+        })),
         label: {
           // 柱顶显示数值
           show: true,
