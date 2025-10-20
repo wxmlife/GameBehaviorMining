@@ -3,236 +3,226 @@
   <head>
     <meta charset="UTF-8" />
     <title>学生游戏行为分析仪表盘</title>
+    <link rel="stylesheet" href="css/dashBoard.css" />
+    <!-- 先 echarts，再业务 js（按依赖顺序） -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <style>
-      body {
-        font-family: "Helvetica Neue", Arial, sans-serif;
-        margin: 20px;
-        background: #f5f7fa;
-      }
-      h1,
-      h2 {
-        color: #333;
-      }
-      .chart-box {
-        background: #fff;
-        padding: 20px;
-        margin-bottom: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      }
-      select {
-        margin-bottom: 15px;
-      }
-    </style>
+    <script src="js/data.js" defer></script>
+    <script src="js/charts.js" defer></script>
+    <script src="js/main.js" defer></script>
   </head>
   <body>
-    <h1>📊 学生游戏行为画像仪表盘</h1>
-
-    <!-- 班级 & 学生选择 -->
-    <div>
+    <aside class="sidebar">
+      <!-- 选择器 -->
       <label>选择班级：</label>
-      <select id="classSelect"></select>
+      <select class="selectorSelect" id="classSelect"></select>
       <label>选择学号：</label>
-      <select id="stuSelect"></select>
-    </div>
+      <select class="selectorSelect" id="stuSelect"></select>
+      <p>说明：</p>
+      <p>本仪表盘共有5个页面</p>
+      <p>页面1为基础的行为画像概览，可以了解学生在游戏里的基本表现</p>
+    </aside>
 
-    <!-- 图1：行为次数对比 -->
-    <div class="chart-box" id="countBar"></div>
-    <!-- 图2：行为时长对比 -->
-    <div class="chart-box" id="durationBar"></div>
+    <main class="main-content">
+      <!-- 顶部基础档案信息 -->
+      <section class="info-card">
+        <h1>📊 学生游戏行为画像仪表盘</h1>
+        &nbsp;
+        <h2 class="stuInfo1">
+          👤 学生档案：<span id="Class"></span>
+          <p>-</p>
+          <span id="StuNum"></span>
+        </h2>
+        &nbsp;
+        <div class="stuInfo2">
+          <div class="stuInfoCol">
+            <p class="smaller">性别</p>
+            <span id="Sex" class="large"></span>
+          </div>
+          <div class="stuInfoCol">
+            <p class="smaller">前测成绩</p>
+            <span id="preScore" class="large"></span>
+          </div>
+          <div class="stuInfoCol">
+            <p class="smaller">后测成绩</p>
+            <span id="postScore" class="large"></span>
+          </div>
+          <div class="stuInfoCol">
+            <p class="smaller">游戏次数</p>
+            <span id="gameCount" class="large"></span>
+          </div>
+          <div class="stuInfoCol">
+            <p class="smaller">首次游戏答题成绩</p>
+            <span id="firstGameScore" class="large"></span>
+          </div>
+        </div>
+      </section>
+      <!-- 子页面导航 -->
+      <nav class="subpage-nav">
+        <ul>
+          <li>
+            <a href="#" class="active" data-target="page1">行为画像概览</a>
+          </li>
+          <li>
+            <a href="#" data-target="page2">详细行为分析</a>
+          </li>
+          <li><a href="#" data-target="page3">游戏内练习测试行为分析</a></li>
+          <li><a href="#" data-target="page4">行为模式与行为变量关系</a></li>
+          <li><a href="#" data-target="page5">学习建议</a></li>
+        </ul>
+      </nav>
 
-    <script>
-      // ===== 通用：加载 JSON =====
-      async function loadJSON(file) {
-        const res = await fetch("data/" + file);
-        return res.json();
-      }
+      <!-- 子页面内容 --><!-- 图表展示区 -->
+      <section class="subpage-content">
+        <div class="subpage active" id="page1">
+          <!-- 图表容器 -->
+          <p style="font-size: 20; font-weight: bold">
+            💖 学生游戏行为类型偏好：各类游戏行为的频率和时长
+          </p>
+          <div style="display: flex; gap: 20px">
+            <div class="chart-nor-box" id="countPie"></div>
+            <div class="chart-wid-box" id="countBar"></div>
+          </div>
+          <div style="display: flex; gap: 20px">
+            <div class="chart-nor-box" id="durationPie"></div>
+            <div class="chart-wid-box" id="durationBar"></div>
+          </div>
+          <p style="font-size: 20; font-weight: bold">
+            📈 学生游戏成绩 VS 班级平均游戏成绩
+          </p>
+          <div class="chart-full-box" id="scoreLine"></div>
+        </div>
+        <div class="subpage" id="page2">
+          <p style="font-size: 20; font-weight: bold">
+            📈 学习者在游戏中做了什么：学习者的游戏详细行为时序与密度
+          </p>
+          <div class="chart-full-box" id="BehaviorHeatmap"></div>
+          <!-- 一个表单：放在你两个子页切换的 div 里即可 -->
+          <div id="subClassCompareWrap" style="margin-top: 32px">
+            <p style="font-size: 20; font-weight: bold">
+              🏫学生详细游戏行为 vs 班级平均
+            </p>
+            &nbsp;
+            <p style="font-weight: bold">
+              班级: <span id="className"></span> | 指标: 时长(秒)
+            </p>
+            <div
+              id="subCompareTable_Wrapper"
+              style="width: 100%; margin-top: 10px"
+            >
+              <table id="subCompareTable_HTML" class="compare-table">
+                <thead>
+                  <tr>
+                    <th>行为类别</th>
+                    <th>学生数据</th>
+                    <th>班级平均</th>
+                    <th>差异</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- 数据行由 JS 填充<不要删除其标签，不然数据行就没了> -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- 子页3 -->
+        <div class="subpage" id="page3">
+          <p style="font-size: 20; font-weight: bold">
+            🚀 学习者学会了什么：学习者游戏内的知识掌握程度和得分
+          </p>
+          &nbsp;
+          <!-- ① 答题细节表 -->
+          <p style="font-size: 16px; font-weight: bold; margin-top: 20px">
+            👤 学生答题细节
+          </p>
+          <table id="qaDetailTable" class="compare-table">
+            <thead>
+              <tr>
+                <th>题目</th>
+                <th>答题结果</th>
+                <th>尝试次数</th>
+                <th>答题时间(s)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS 填充 -->
+            </tbody>
+          </table>
 
-      // ===== 初始化：填充班级下拉框 =====
-      (async function initClassSelect() {
-        const stuData = await loadJSON("每个学生游戏行为画像.json");
-        // 去重班级列表
-        const classes = [...new Set(stuData.map((d) => d.Class))];
-        const classSel = document.getElementById("classSelect");
-        classes.forEach((c) => {
-          const opt = document.createElement("option");
-          opt.value = c;
-          opt.textContent = c;
-          classSel.appendChild(opt);
-        });
-        classSel.addEventListener("change", fillStudentSelect);
-        classSel.dispatchEvent(new Event("change")); // 触发一次，填充学生
-      })();
+          <!-- ② 汇总行 -->
+          <p style="font-size: 16px; font-weight: bold; margin-top: 20px">
+            📊 答题汇总
+          </p>
+          <table id="qaSummaryTable" class="compare-table">
+            <thead>
+              <tr>
+                <th>题目总数</th>
+                <th>答题准确率</th>
+                <th>平均尝试次数</th>
+                <th>平均答题时间(s)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS 填充 -->
+            </tbody>
+          </table>
 
-      // ===== 填充学生下拉框（从学生画像里读）=====
-      async function fillStudentSelect() {
-        const cls = document.getElementById("classSelect").value;
-        const stuData = await loadJSON("每个学生游戏行为画像.json");
-        // 只保留当前班级的学生
-        const stus = stuData
-          .filter((d) => d.Class === cls)
-          .map((d) => d.StuNum);
-        const stuSel = document.getElementById("stuSelect");
-        stuSel.innerHTML = "";
-        stus.forEach((s) => {
-          const opt = document.createElement("option");
-          opt.value = s;
-          opt.textContent = s;
-          stuSel.appendChild(opt);
-        });
-        // 默认触发一次更新图表
-        stuSel.dispatchEvent(new Event("change"));
-      }
+          <!-- ③ 每题时间分布条形图 -->
+          <p style="font-size: 16px; font-weight: bold; margin-top: 20px">
+            ⏱️ 每题答题时间分布
+          </p>
+          <div
+            id="timeBarChart"
+            style="width: 1150px; height: 260px; margin: 10px 0"
+          ></div>
 
-      // ===== 主函数：更新所有图表 =====
-      async function updateCharts() {
-        const cls = document.getElementById("classSelect").value;
-        const stu = document.getElementById("stuSelect").value;
-        if (!cls || !stu) return;
+          <!-- ④ 与班级平均对比（自己算平均） -->
+          <p style="font-size: 16px; font-weight: bold; margin-top: 20px">
+            🏫 与班级平均对比
+          </p>
+          <table id="qaClassCompareTable" class="compare-table">
+            <thead>
+              <tr>
+                <th>指标</th>
+                <th>学生数据</th>
+                <th>班级平均</th>
+                <th>差异</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS 填充 -->
+            </tbody>
+          </table>
 
-        const [stuData, clsData] = await Promise.all([
-          loadJSON("每个学生游戏行为画像.json").then((arr) =>
-            arr.find((d) => d.Class === cls && d.StuNum === stu)
-          ),
-          loadJSON("班级行为画像.json").then((arr) =>
-            arr.find((d) => d.Class === cls)
-          ),
-        ]);
+          <!-- ⑤ 知识掌握程度雷达图（底部） -->
+          <p style="font-size: 16px; font-weight: bold; margin-top: 20px">
+            📊 学生知识掌握程度 VS 班级平均知识掌握程度
+          </p>
+          <div
+            id="qaRadarChart"
+            style="width: 1150px; height: 400px; margin: 10px 0"
+          ></div>
+        </div>
 
-        // 若找不到学生，直接返回
-        if (!stuData) {
-          console.warn("未找到该学生");
-          return;
-        }
-
-        // 1️⃣ 行为次数对比
-        drawCountBar(stuData, clsData);
-        // 2️⃣ 行为时长对比
-        drawDurationBar(stuData, clsData);
-      }
-
-      // ===== 图表1：行为次数对比 =====
-      function drawCountBar(stu, cls) {
-        const categories = ["阅读", "探索", "练习", "反馈", "重玩/结束"];
-        const stuCounts = categories.map(
-          (_, i) =>
-            stu[
-              `round1_${
-                ["read", "explore", "practice", "feedback", "replay_end"][i]
-              }_count`
-            ] || 0
-        );
-        const clsCounts = categories.map(
-          (_, i) =>
-            cls[
-              `class_avg_round1_${
-                ["read", "explore", "practice", "feedback", "replay_end"][i]
-              }_count`
-            ] || 0
-        );
-
-        const chart = echarts.init(document.getElementById("countBar"));
-        chart.setOption({
-          title: { text: "行为次数对比（学生 vs 班级平均）" },
-          tooltip: { trigger: "axis" },
-          legend: { data: ["学生次数", "班级平均"] },
-          xAxis: { type: "category", data: categories },
-          yAxis: { type: "value" },
-          series: [
-            {
-              name: "学生次数",
-              type: "bar",
-              data: stuCounts,
-              itemStyle: { color: "#5470c6" },
-            },
-            {
-              name: "班级平均",
-              type: "bar",
-              data: clsCounts,
-              itemStyle: { color: "#91cc75" },
-            },
-          ],
-        });
-      }
-
-      // ===== 图表2：行为时长对比 =====
-      function drawDurationBar(stu, cls) {
-        const categories = ["阅读", "探索", "练习", "反馈", "重玩/结束"];
-        const stuDurs = categories.map(
-          (_, i) =>
-            stu[
-              `round1_${
-                ["read", "explore", "practice", "feedback", "replay_end"][i]
-              }_duration`
-            ] || 0
-        );
-        const clsDurs = categories.map(
-          (_, i) =>
-            cls[
-              `class_avg_round1_${
-                ["read", "explore", "practice", "feedback", "replay_end"][i]
-              }_duration`
-            ] || 0
-        );
-
-        const chart = echarts.init(document.getElementById("durationBar"));
-        chart.setOption({
-          title: { text: "行为时长对比（学生 vs 班级平均）" },
-          tooltip: { trigger: "axis" },
-          legend: { data: ["学生时长", "班级平均"] },
-          xAxis: { type: "category", data: categories },
-          yAxis: { type: "value" },
-          series: [
-            {
-              name: "学生时长",
-              type: "bar",
-              data: stuDurs,
-              itemStyle: { color: "#5470c6" },
-            },
-            {
-              name: "班级平均",
-              type: "bar",
-              data: clsDurs,
-              itemStyle: { color: "#91cc75" },
-            },
-          ],
-        });
-      }
-
-      // ===== 图表3：游戏成绩折线 =====
-      function drawScoreLine(stu, cls) {
-        const rounds = [1, 2, 3, 4, 5];
-        const stuScores = rounds.map((r) => stu[`game_score_${r}`] || 0);
-        const clsScores = rounds.map(
-          (r) => cls[`class_avg_game_score_${r}`] || 0
-        );
-
-        const chart = echarts.init(document.getElementById("scoreLine"));
-        chart.setOption({
-          title: { text: "游戏成绩对比（学生 vs 班级平均）" },
-          tooltip: { trigger: "axis" },
-          legend: { data: ["学生成绩", "班级平均"] },
-          xAxis: { type: "category", data: rounds },
-          yAxis: { type: "value" },
-          series: [
-            {
-              name: "学生成绩",
-              type: "line",
-              data: stuScores,
-              lineStyle: { color: "#5470c6" },
-              symbol: "circle",
-            },
-            {
-              name: "班级平均",
-              type: "line",
-              data: clsScores,
-              lineStyle: { color: "#91cc75", type: "dashed" },
-              symbol: "none",
-            },
-          ],
-        });
-      }
-    </script>
+        <!-- 子页4 -->
+        <div class="subpage" id="page4">
+          <img src="./img/model1.png"/>
+        </div>
+        <!-- 子页4 -->
+        <div class="subpage" id="page5">
+          <p>
+            可以根据前面的画像内容描述的4方面分析给出学生总评描述：</p>
+            游戏化学习是否对该学习者有效：是，否</p>
+            学习者的游戏行为偏好：偏好阅读、探索、练习测试……，或快速通关</p>
+            学习者的答题猜测指数：答题时长*尝试次数（标准化0-1）</p>
+            学习者的知识掌握程度：游戏探索表现+练习测试表现（标准化0-1），生成雷达图</p>
+            学习建议示例（考虑接一下人工智能的API，或者直接写死评价建议规则）：</p>
+            本次游戏化学习对该学习者起正向作用</p>
+            学生在游戏学习中偏好：阅读、探索……</p>
+            建议强化XX的知识模块学习。`</p>
+        </div>
+      </section>
+    </main>
   </body>
 </html>

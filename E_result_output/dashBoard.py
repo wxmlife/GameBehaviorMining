@@ -94,7 +94,7 @@ col5.metric("首次游戏答题成绩", int(student_data['initial_correct_q'].il
 # 定义大类行为和对应的子类
 behavior_hierarchy = {
     "read": ["read_knowledge", "read_rules", "read_return"],
-    "explore": ["explore_move", "explore_feedback_positive", "explore_feedback_negative"],
+    "explore": ["explore_move", "explore_positive", "explore_negative"],
     "practice": ["practice_choice", "practice_sub"],
     "feedback": ["feedback_explaint", "feedback_sumAssessment"],
     "replay_end": ["replay_end_part_replay", "replay_end_replay"]
