@@ -30,7 +30,7 @@ BEHAVIOR_MAPPING = {
         "negative": [r"L\dQ\dFB", r".*feedback_negative.*"],
         "sumAssessment": [r"L\dEP", r"L\dEnd"]
     },
-    # 重玩/结束 - 第五类行为，持续时间等于次数
+    # 重玩/结束 - 第五类行为
     "replay_end": {
         "part_replay": [r"L3Replay"],
         "replay": []  # 游戏轮次在统计时处理

@@ -782,3 +782,395 @@ async function drawPage3(stu, cls, mas) {
     ],
   });
 }
+
+/* ========== 子页5：学习建议与综合评估 ========== */
+/* ========== 第5子页：学习建议与综合评估 ========== */
+function drawPage5(stu, cls, mas, allStuData, allMasData) {
+  // 计算各项指标（显式传递数据）
+  const metrics = calculateMetrics(stu, cls, mas, allStuData, allMasData);
+
+  // 更新总评卡片
+  updateSummaryCards(metrics);
+
+  // 绘制知识掌握雷达图
+  drawKnowledgeRadar(stu, cls, mas, allMasData);
+
+  // 生成学习建议
+  generateSuggestions(stu, cls, metrics, mas, allMasData);
+
+  // 填充详细分析表格
+  fillAnalysisTable(stu, cls, metrics);
+
+  console.log("第5页数据加载完成", metrics);
+}
+
+// 计算各项评估指标
+// 计算各项评估指标（接收数据参数）
+function calculateMetrics(stu, cls, mas, allStuData, allMasData) {
+  // 防御性默认值
+  if (!allStuData) allStuData = [];
+  if (!allMasData) allMasData = [];
+
+  // 1. 答题猜测指数计算
+  const qa = stu.qa_details_round1 || {};
+  const totalQ = Math.max(Object.keys(qa).length, 1); // 避免除0
+
+  const avgAttempts =
+    Object.values(qa).reduce((s, v) => s + (v?.attempts || 0), 0) / totalQ;
+  const avgTime =
+    Object.values(qa).reduce((s, v) => s + (v?.answer_time || 0), 0) / totalQ;
+
+  // 计算班级平均（防御性代码）
+  const classAttempts =
+    allStuData.length > 0
+      ? allStuData.reduce((sum, s) => {
+          const q = s.qa_details_round1 || {};
+          const qKeys = Object.keys(q);
+          return (
+            sum +
+            (qKeys.length > 0
+              ? qKeys.reduce((a, key) => a + (q[key]?.attempts || 0), 0) /
+                qKeys.length
+              : 0)
+          );
+        }, 0) / allStuData.length
+      : 1;
+
+  const classTime =
+    allStuData.length > 0
+      ? allStuData.reduce((sum, s) => {
+          const q = s.qa_details_round1 || {};
+          const qKeys = Object.keys(q);
+          return (
+            sum +
+            (qKeys.length > 0
+              ? qKeys.reduce((a, key) => a + (q[key]?.answer_time || 0), 0) /
+                qKeys.length
+              : 1)
+          );
+        }, 0) / allStuData.length
+      : 1;
+
+  const guessIndex = Math.min(
+    1,
+    ((avgAttempts * avgTime) / (classAttempts * classTime || 1)) * 0.5
+  );
+
+  // 2. 知识掌握程度
+  const masteryKeys = [
+    "passwordFunction_mastery",
+    "passwordComposition_mastery",
+    "cybersecurityTools_mastery",
+    "cyberattackAvoidance_mastery",
+    "passwordStrengthMemory_mastery",
+  ];
+  const masteryScore =
+    masteryKeys.reduce((sum, k) => sum + (mas?.[k] || 0), 0) /
+    masteryKeys.length;
+
+  // 3. 游戏化学习有效性
+  const scoreImprovement = ((stu.postScore || 0) - (stu.preScore || 0)) / 100;
+  const firstGameScore =
+    (stu.firstGameScore || stu.initial_correct_q || 0) / 100;
+  const effectiveness = Math.min(1, scoreImprovement);
+
+  // 4. 行为偏好分析
+  const behaviorPrefs = {
+    read: stu.total_read_duration || 0,
+    explore: stu.total_explore_duration || 0,
+    practice: stu.total_practice_duration || 0,
+    feedback: stu.total_feedback_duration || 0,
+  };
+  const maxBehavior = Object.entries(behaviorPrefs).sort(
+    (a, b) => b[1] - a[1]
+  )[0][0];
+
+  // 5. 计算知识薄弱点
+  const weakAreas = [];
+  masteryKeys.forEach((k) => {
+    const score = mas?.[k] || 0;
+    if (score < 0.6) {
+      weakAreas.push(
+        k
+          .replace("_mastery", "")
+          .replace(/([A-Z])/g, " $1")
+          .trim()
+      );
+    }
+  });
+
+  return {
+    guessIndex: isNaN(guessIndex) ? 0 : guessIndex,
+    masteryScore: isNaN(masteryScore) ? 0 : masteryScore,
+    effectiveness: isNaN(effectiveness) ? 0 : effectiveness,
+    maxBehavior,
+    avgAttempts: isNaN(avgAttempts) ? 0 : avgAttempts,
+    avgTime: isNaN(avgTime) ? 0 : avgTime,
+    scoreImprovement: (stu.postScore || 0) - (stu.preScore || 0),
+    behaviorPrefs,
+    weakAreas,
+  };
+}
+
+// 更新总评卡片
+function updateSummaryCards(metrics) {
+  // 有效性卡片
+  const effText = metrics.effectiveness > 0 ? "✅ 非常有效" : "❓ 效果不明显";
+  document.getElementById("learningEffectiveness").textContent = effText;
+
+  // 行为偏好卡片
+  const behaviorMap = {
+    read: "📖 深度阅读型",
+    explore: "🔍 探索发现型",
+    practice: "✍️ 练习测试型",
+    feedback: "💭 反思反馈型",
+  };
+  document.getElementById("behaviorPreference").textContent =
+    behaviorMap[metrics.maxBehavior];
+
+  // 猜测指数
+  document.getElementById("guessIndex").textContent =
+    metrics.guessIndex.toFixed(2);
+  document.getElementById("guessIndexBar").style.width =
+    metrics.guessIndex * 100 + "%";
+
+  // 掌握程度
+  document.getElementById("masteryScore").textContent =
+    metrics.masteryScore.toFixed(2);
+  document.getElementById("masteryBar").style.width =
+    metrics.masteryScore * 100 + "%";
+}
+
+// 绘制知识掌握程度雷达图
+// 绘制知识掌握程度雷达图（接收allMasData参数）
+function drawKnowledgeRadar(stu, cls, mas, allMasData) {
+  const radar = echarts.init(document.getElementById("knowledgeRadar"));
+
+  const masteryKeys = [
+    "passwordFunction_mastery",
+    "passwordComposition_mastery",
+    "cybersecurityTools_mastery",
+    "cyberattackAvoidance_mastery",
+    "passwordStrengthMemory_mastery",
+  ];
+
+  const indicator = masteryKeys.map((k) => ({
+    name: k
+      .replace("_mastery", "")
+      .replace(/([A-Z])/g, " $1")
+      .trim(),
+    max: 1,
+  }));
+
+  const stuRadar = masteryKeys.map((k) => mas?.[k] || 0);
+
+  // 计算班级平均
+  const clsRadar = masteryKeys.map((k) => {
+    if (!allMasData || allMasData.length === 0) return 0;
+    const sum = allMasData.reduce((a, s) => a + (s?.[k] || 0), 0);
+    return sum / allMasData.length;
+  });
+
+  radar.setOption({
+    legend: { data: ["学生掌握度", "班级平均"], bottom: 10 },
+    radar: {
+      indicator,
+      radius: "70%",
+      axisName: { color: "#333" },
+    },
+    series: [
+      {
+        type: "radar",
+        data: [
+          {
+            value: stuRadar,
+            name: "学生掌握度",
+            itemStyle: { color: "#ff6b6b" },
+            areaStyle: { opacity: 0.3 },
+          },
+          {
+            value: clsRadar,
+            name: "班级平均",
+            itemStyle: { color: "#4ecdc4" },
+            areaStyle: { opacity: 0.3 },
+          },
+        ],
+      },
+    ],
+  });
+}
+
+// 生成个性化学习建议
+// 生成个性化学习建议（增强版：基于班级平均对比）
+function generateSuggestions(stu, cls, metrics, mas, allMasData) {
+  const suggestions = [];
+
+  // 1. 基于有效性
+  if (metrics.effectiveness > 0) {
+    suggestions.push({
+      title: "学习效果卓越",
+      content:
+        "游戏化学习对该学习者非常有效！建议继续采用此类学习方式，并尝试更高难度的挑战内容。",
+    });
+  } else if (metrics.effectiveness <= 0) {
+    suggestions.push({
+      title: "学习效果待提升",
+      content:
+        "当前游戏化学习效果有限，建议调整学习策略，增加传统学习方式（如理论学习）与游戏学习的结合。",
+    });
+  }
+
+  // 2. 基于行为偏好
+  const behaviorAdvice = {
+    read: "学生偏好阅读说明，建议提供更多深入的文本材料和学习指南。",
+    explore: "学生喜欢探索发现，建议增加开放性问题，鼓励自主探索。",
+    practice: "学生重视练习测试，建议提供更多练习题和即时反馈。",
+    feedback: "学生关注反馈反思，建议加强错题解析和知识回顾环节。",
+  };
+  suggestions.push({
+    title: "行为偏好优化建议",
+    content: behaviorAdvice[metrics.maxBehavior],
+  });
+
+  // 3. 基于知识薄弱环节（与班级平均对比）
+  const masteryKeys = [
+    "passwordFunction_mastery",
+    "passwordComposition_mastery",
+    "cybersecurityTools_mastery",
+    "cyberattackAvoidance_mastery",
+    "passwordStrengthMemory_mastery",
+  ];
+
+  // 计算班级平均掌握度
+  const classMasteryAvg = {};
+  masteryKeys.forEach((key) => {
+    if (allMasData && allMasData.length > 0) {
+      const sum = allMasData.reduce((acc, s) => acc + (s[key] || 0), 0);
+      classMasteryAvg[key] = sum / allMasData.length;
+    } else {
+      classMasteryAvg[key] = 0; // 无数据时默认为0
+    }
+  });
+
+  // 找出学生低于班级平均的知识模块
+  const weakAreas = [];
+  masteryKeys.forEach((key) => {
+    const stuValue = mas?.[key] || 0;
+    const clsAvg = classMasteryAvg[key];
+    if (stuValue < clsAvg) {
+      // 低于班级平均即视为薄弱
+      weakAreas.push(
+        key
+          .replace("_mastery", "")
+          .replace(/([A-Z])/g, " $1")
+          .trim()
+      );
+    }
+  });
+
+  if (weakAreas.length > 0) {
+    suggestions.push({
+      title: "重点强化模块（低于班级平均）",
+      content: `以下知识模块的掌握程度低于班级平均水平，建议重点学习：${weakAreas.join(
+        "、"
+      )}。可通过专项练习、复习资料或向老师求助进行巩固。`,
+    });
+  } else {
+    suggestions.push({
+      title: "知识掌握均衡",
+      content:
+        "学生在各知识模块的掌握程度均达到或超过班级平均水平，可继续保持当前学习节奏。",
+    });
+  }
+
+  // 4. 基于答题策略
+  if (metrics.guessIndex > 0.7) {
+    suggestions.push({
+      title: "答题策略调整",
+      content:
+        "检测到有较多猜测行为，建议放慢答题节奏，深入理解题目背后的知识点，减少盲目尝试。",
+    });
+  } else if (metrics.guessIndex < 0.3) {
+    suggestions.push({
+      title: "学习态度踏实",
+      content:
+        "学生答题认真，策略稳健。可适当加快学习节奏，挑战更高难度的内容。",
+    });
+  }
+
+  // 渲染建议
+  const container = document.getElementById("suggestions");
+  container.innerHTML = suggestions
+    .map(
+      (s) => `
+    <div class="suggestion-item">
+      <div class="suggestion-title">${s.title}</div>
+      <p class="suggestion-content">${s.content}</p>
+    </div>
+  `
+    )
+    .join("");
+}
+
+// 填充详细分析表格
+function fillAnalysisTable(stu, cls, metrics) {
+  const tbody = document.getElementById("analysisTableBody");
+
+  const rows = [
+    {
+      dimension: "前后测提升",
+      student: `+${metrics.scoreImprovement}分`,
+      class: `${cls.class_avg_postScore - cls.class_avg_preScore}分`,
+      diff:
+        metrics.scoreImprovement >
+        cls.class_avg_postScore - cls.class_avg_preScore
+          ? "高于平均"
+          : "低于平均",
+      level:
+        metrics.scoreImprovement > 20
+          ? "high"
+          : metrics.scoreImprovement > 10
+          ? "medium"
+          : "low",
+    },
+    {
+      dimension: "游戏参与度",
+      student: `${stu.game_count}次`,
+      class: `${cls.class_avg_game_count}次`,
+      diff: stu.game_count > cls.class_avg_game_count ? "积极参与" : "参与一般",
+      level: stu.game_count > cls.class_avg_game_count ? "high" : "low",
+    },
+    {
+      dimension: "首次答题成绩",
+      student: `${stu.firstGameScore || 0}%`,
+      class: `${cls.class_avg_firstGameScore}%`,
+      diff:
+        stu.firstGameScore > cls.class_avg_firstGameScore ? "优秀" : "待提升",
+      level:
+        stu.firstGameScore > cls.class_avg_firstGameScore ? "high" : "medium",
+    },
+    {
+      dimension: "平均尝试次数",
+      student: metrics.avgAttempts.toFixed(1),
+      class: "班级数据计算中",
+      diff: metrics.avgAttempts > 2 ? "需减少猜测" : "策略良好",
+      level: metrics.avgAttempts > 2 ? "low" : "high",
+    },
+  ];
+
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+    <tr>
+      <td>${r.dimension}</td>
+      <td>${r.student}</td>
+      <td>${r.class}</td>
+      <td>${r.diff}</td>
+      <td><span class="level-badge level-${r.level}">${
+        r.level === "high" ? "优秀" : r.level === "medium" ? "中等" : "需改进"
+      }</span></td>
+    </tr>
+  `
+    )
+    .join("");
+}

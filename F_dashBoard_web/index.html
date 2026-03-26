@@ -207,11 +207,11 @@
 
         <!-- 子页4 -->
         <div class="subpage" id="page4">
-          <img src="./img/model1.png"/>
+          <img src="./img/model1.png" />
         </div>
-        <!-- 子页4 -->
+        <!-- 子页5 -->
         <div class="subpage" id="page5">
-          <p>
+          <!-- <p>
             可以根据前面的画像内容描述的4方面分析给出学生总评描述：</p>
             游戏化学习是否对该学习者有效：是，否</p>
             学习者的游戏行为偏好：偏好阅读、探索、练习测试……，或快速通关</p>
@@ -220,7 +220,110 @@
             学习建议示例（考虑接一下人工智能的API，或者直接写死评价建议规则）：</p>
             本次游戏化学习对该学习者起正向作用</p>
             学生在游戏学习中偏好：阅读、探索……</p>
-            建议强化XX的知识模块学习。`</p>
+            建议强化XX的知识模块学习。`</p> -->
+          <!-- 子页5 -->
+            <!-- 学习有效性总评卡片 -->
+            <section class="recommendation-section">
+              <h2 class="section-title">🎯 学习效果总评</h2>
+              <div class="summary-cards">
+                <div class="summary-card" id="effectivenessCard">
+                  <div class="card-icon">📊</div>
+                  <div class="card-content">
+                    <h3>游戏化学习有效性</h3>
+                    <div class="card-value" id="learningEffectiveness">
+                      评估中...
+                    </div>
+                    <div class="card-desc" id="effectivenessDesc">
+                      基于前后测成绩与游戏表现综合分析
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-card" id="behaviorPreferenceCard">
+                  <div class="card-icon">🎮</div>
+                  <div class="card-content">
+                    <h3>行为偏好类型</h3>
+                    <div class="card-value" id="behaviorPreference">
+                      分析中...
+                    </div>
+                    <div class="card-desc" id="preferenceDesc">
+                      学生在游戏中的主要行为模式
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-card" id="guessIndexCard">
+                  <div class="card-icon">🤔</div>
+                  <div class="card-content">
+                    <h3>答题策略指数</h3>
+                    <div class="card-value">
+                      <span id="guessIndex">0</span>
+                      <span class="index-bar">
+                        <span class="index-fill" id="guessIndexBar"></span>
+                      </span>
+                    </div>
+                    <div class="card-desc" id="guessDesc">
+                      0=扎实学习，1=频繁猜测
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-card" id="masteryCard">
+                  <div class="card-icon">📚</div>
+                  <div class="card-content">
+                    <h3>综合掌握程度</h3>
+                    <div class="card-value">
+                      <span id="masteryScore">0</span>
+                      <span class="index-bar">
+                        <span class="index-fill" id="masteryBar"></span>
+                      </span>
+                    </div>
+                    <div class="card-desc" id="masteryDesc">0=薄弱，1=精通</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 知识掌握雷达图 -->
+            <section class="recommendation-section">
+              <h2 class="section-title">📊 知识模块掌握度分析</h2>
+              <div class="chart-container">
+                <div
+                  id="knowledgeRadar"
+                  style="width: 100%; height: 400px"
+                ></div>
+              </div>
+            </section>
+
+            <!-- 学习建议 -->
+            <section class="recommendation-section">
+              <h2 class="section-title">💡 个性化学习建议</h2>
+              <div class="suggestion-box" id="suggestions">
+                <!-- 动态生成建议内容 -->
+              </div>
+            </section>
+
+            <!-- 详细分析报告 -->
+            <section class="recommendation-section">
+              <h2 class="section-title">📋 详细分析报告</h2>
+              <div class="analysis-details">
+                <table class="recommendation-table">
+                  <thead>
+                    <tr>
+                      <th>评估维度</th>
+                      <th>学生表现</th>
+                      <th>班级平均</th>
+                      <th>差异分析</th>
+                      <th>等级</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analysisTableBody">
+                    <!-- 动态生成 -->
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
         </div>
       </section>
     </main>
